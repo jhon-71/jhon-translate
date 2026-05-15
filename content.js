@@ -24,13 +24,18 @@ if (!window.jhonTranslateInjected) {
   });
 
   document.addEventListener('keydown', (e) => {
+    // 扩展更新后，如果网页没刷新，旧的 content.js 会变成孤儿脚本，chrome API 会失效
+    if (!chrome.runtime || !chrome.runtime.id) return;
+
     // 全文翻译：Alt + A (Option + A on Mac)
     if (e.altKey && e.code === 'KeyA') {
       e.preventDefault();
-      chrome.storage.local.get(['targetLang'], (result) => {
-        const targetLang = result.targetLang || 'zh-CN';
-        startTranslation(targetLang);
-      });
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['targetLang'], (result) => {
+          const targetLang = result.targetLang || 'zh-CN';
+          startTranslation(targetLang);
+        });
+      }
       return;
     }
 
@@ -58,10 +63,12 @@ if (!window.jhonTranslateInjected) {
 
       hoveredElement.dataset.jhonTranslated = "true";
       
-      chrome.storage.local.get(['targetLang'], (result) => {
-        const targetLang = result.targetLang || 'zh-CN';
-        processElement(hoveredElement, text, targetLang);
-      });
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['targetLang'], (result) => {
+          const targetLang = result.targetLang || 'zh-CN';
+          processElement(hoveredElement, text, targetLang);
+        });
+      }
     }
   });
 
