@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Jhon Translate",
-  "version": "1.0",
-  "description": "A simple immersive translation extension.",
+  "version": "1.1",
+  "description": "A lightweight, open-source clone of Immersive Translate.",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "permissions": [
     "activeTab",
     "scripting",
@@ -19,6 +24,11 @@
     }
   ],
   "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
     "default_popup": "popup.html"
   },
   "background": {
