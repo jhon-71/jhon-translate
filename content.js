@@ -9,7 +9,7 @@ if (!window.jhonTranslateInjected) {
   });
 
   let hoveredElement = null;
-  const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote';
+  const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, span[data-as="p"]';
 
   document.addEventListener('mouseover', (e) => {
     if (e.target && e.target.closest) {
@@ -85,7 +85,7 @@ if (!window.jhonTranslateInjected) {
     document.body.dataset.pageTranslated = "true";
 
     // Select common block elements containing text
-    const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote';
+    const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, span[data-as="p"]';
     const elements = document.querySelectorAll(selectors);
 
     // Limit concurrency to avoid slamming the API
