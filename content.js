@@ -15,13 +15,13 @@ if (!window.jhonTranslateInjected) {
     if (e.target && e.target.closest) {
       hoveredElement = e.target.closest(selectors);
     }
-  });
+  }, { capture: true, passive: true });
 
   document.addEventListener('mouseout', (e) => {
     if (e.target && e.target.closest && e.target.closest(selectors) === hoveredElement) {
       hoveredElement = null;
     }
-  });
+  }, { capture: true, passive: true });
 
   document.addEventListener('keydown', (e) => {
     // 扩展更新后，如果网页没刷新，旧的 content.js 会变成孤儿脚本，chrome API 会失效
@@ -70,7 +70,7 @@ if (!window.jhonTranslateInjected) {
         });
       }
     }
-  });
+  }, { capture: true });
 
   async function startTranslation(targetLang) {
     // 如果整个页面已经翻译过了，再次触发则清除所有翻译（Toggle Off）

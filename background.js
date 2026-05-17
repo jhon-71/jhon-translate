@@ -28,15 +28,35 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "TRANSLATE_TEXT") {
-    translateText(request.text, request.targetLang)
-      .then(translated => sendResponse({ translated }))
-      .catch(error => {
-        console.error("Translation error:", error);
-        sendResponse({ error: error.message });
-      });
+    queue.push({
+      text: request.text,
+      targetLang: request.targetLang,
+      sendResponse
+    });
+    processQueue();
     return true; // Indicates async response
   }
 });
+
+async function processQueue() {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  while (queue.length > 0) {
+    const item = queue.shift();
+    try {
+      const translated = await translateText(item.text, item.targetLang);
+      item.sendResponse({ translated });
+    } catch (error) {
+      console.error("Translation error:", error);
+      item.sendResponse({ error: error.message });
+    }
+    // Delay between requests to avoid slamming the free API (rate limit)
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+
+  isProcessing = false;
+}
 
 async function translateText(text, targetLang) {
   // Google Translate Free API endpoint
