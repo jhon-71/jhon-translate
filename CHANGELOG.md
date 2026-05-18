@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.1] - 2026-05-18
 ### Added
 - **SVG / Mermaid Translation Support**: The extension can now seamlessly translate SVG text nodes (`<text>`, `<tspan>`) by appending native SVG elements instead of HTML wrappers, fixing translation failures on Mermaid graphs and data visualizations.
 - **ForeignObject Support**: SVG `foreignObject` containers now get `overflow: visible` during translation to prevent HTML text clipping.
