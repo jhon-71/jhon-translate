@@ -9,17 +9,36 @@ if (!window.jhonTranslateInjected) {
   });
 
   let hoveredElement = null;
-  const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, span[data-as="p"]';
+  const blockSelectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, div, dt, dd, legend, label, figcaption, article, section, nav, aside, header, footer, address, pre, main, figure, form, fieldset, text';
+  const blockTags = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'TD', 'TH', 'BLOCKQUOTE', 'DIV', 'DT', 'DD', 'UL', 'OL', 'TABLE', 'TR', 'ARTICLE', 'SECTION', 'NAV', 'ASIDE', 'HEADER', 'FOOTER', 'ADDRESS', 'FORM', 'FIELDSET', 'MAIN', 'FIGURE', 'PRE', 'SVG', 'G', 'FOREIGNOBJECT']);
+
+  function isLeafBlock(el) {
+    if (!el) return false;
+    for (let child of el.children) {
+      if (blockTags.has(child.tagName)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   document.addEventListener('mouseover', (e) => {
     if (e.target && e.target.closest) {
-      hoveredElement = e.target.closest(selectors);
+      const closestBlock = e.target.closest(blockSelectors);
+      if (closestBlock && isLeafBlock(closestBlock)) {
+        hoveredElement = closestBlock;
+      } else {
+        hoveredElement = null;
+      }
     }
   }, { capture: true, passive: true });
 
   document.addEventListener('mouseout', (e) => {
-    if (e.target && e.target.closest && e.target.closest(selectors) === hoveredElement) {
-      hoveredElement = null;
+    if (e.target && e.target.closest) {
+      const closestBlock = e.target.closest(blockSelectors);
+      if (closestBlock === hoveredElement) {
+        hoveredElement = null;
+      }
     }
   }, { capture: true, passive: true });
 
@@ -52,11 +71,15 @@ if (!window.jhonTranslateInjected) {
         if (nextEl && nextEl.classList.contains('jhon-translate-result')) {
           nextEl.remove();
         }
+        const childTspan = hoveredElement.querySelector && hoveredElement.querySelector('.jhon-translate-result');
+        if (childTspan) {
+          childTspan.remove();
+        }
         delete hoveredElement.dataset.jhonTranslated;
         return;
       }
       
-      const text = hoveredElement.innerText?.trim();
+      const text = hoveredElement.textContent?.trim(); // use textContent for SVG compat
       if (!text || text.length < 2 || /^[\d\s.,!?@#\$%\^&\*\(\)\-_=\+\[\]\{\}\\|;:'"<>\/`~]+$/.test(text)) {
         return;
       }
@@ -84,9 +107,8 @@ if (!window.jhonTranslateInjected) {
     // 标记页面已整体翻译
     document.body.dataset.pageTranslated = "true";
 
-    // Select common block elements containing text
-    const selectors = 'p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, span[data-as="p"]';
-    const elements = document.querySelectorAll(selectors);
+    // Select block elements containing text, but only those that are "leaf" blocks
+    const elements = Array.from(document.querySelectorAll(blockSelectors)).filter(isLeafBlock);
 
     // Limit concurrency to avoid slamming the API
     const concurrencyLimit = 3;
@@ -99,7 +121,7 @@ if (!window.jhonTranslateInjected) {
       }
 
       // Get text, trim it
-      const text = el.innerText?.trim();
+      const text = el.textContent?.trim(); // use textContent instead of innerText for SVG support
       
       // Basic filter: skip empty or very short strings, or purely numeric/symbol strings
       if (!text || text.length < 2 || /^[\d\s.,!?@#\$%\^&\*\(\)\-_=\+\[\]\{\}\\|;:'"<>\/`~]+$/.test(text)) {
@@ -151,8 +173,35 @@ if (!window.jhonTranslateInjected) {
   }
 
   function injectTranslation(originalElement, translatedText) {
-    // Create the container for the translated text
-    // Using a span with display block or a div depending on parent
+    const isSvg = originalElement.namespaceURI === 'http://www.w3.org/2000/svg';
+    
+    // Case 1: Pure SVG text element
+    if (isSvg && originalElement.tagName.toLowerCase() === 'text') {
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.classList.add('jhon-translate-result');
+      tspan.textContent = translatedText;
+      tspan.style.fill = '#8b949e'; // Dimmed color for visibility in graphs
+      tspan.style.fontSize = '0.9em';
+      tspan.setAttribute('dy', '1.2em');
+      
+      let x = originalElement.getAttribute('x');
+      if (!x) {
+        const firstTspan = originalElement.querySelector('tspan');
+        if (firstTspan) x = firstTspan.getAttribute('x');
+      }
+      if (x) tspan.setAttribute('x', x);
+      
+      originalElement.appendChild(tspan);
+      return;
+    }
+
+    // Case 2: HTML element (might be inside SVG foreignObject)
+    const fo = originalElement.closest ? originalElement.closest('foreignObject') : null;
+    if (fo) {
+      fo.style.overflow = 'visible';
+    }
+
+    // Create the container for the translated HTML text
     const resultNode = document.createElement('div');
     resultNode.classList.add('jhon-translate-result');
     resultNode.textContent = translatedText;
